@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" name="DeepStateMap">
 import { ref, computed, onMounted, watch, defineEmits } from 'vue'
 import {
     Select,
@@ -11,15 +11,16 @@ import {
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { formatDateToUnix } from '@/utils/date'
+import type { FeatureCollection, Feature } from 'geojson'
 
 const API_DATES = 'https://deepstatemap.live/api/history/public'
 const API_GEO_JSON = 'https://deepstatemap.live/api/history/'
 
 const emit = defineEmits(['update']);
 
-const dates = ref([]);
-const selectedDate = ref(null);
-const geojson = ref(null);
+const dates = ref<Array<{ createdAt: string }>>([]);
+const selectedDate = ref<string | undefined>(undefined);
+const geojson = ref<FeatureCollection | null>(null);
 
 const searchQuery = ref('');
 const filteredDates = computed(() => {
@@ -36,15 +37,15 @@ function loadDates() {
         })
 }
 
-function formatGeoJson(geojson) {
+function formatGeoJson(geojson: FeatureCollection): FeatureCollection {
     const json = geojson;
 
-    json.features = json.features.filter(feature => {
-        return !feature.properties.name.includes("Liberated")
+    json.features = json.features.filter((feature: Feature) => {
+        return !feature.properties?.name.includes("Liberated")
             // remove unknown status poligons
             // && !feature.properties.name.includes("Unknown status")
             // remove direction of attack markers
-            && !feature.properties.name.includes("Direction of attack")
+            && !feature.properties?.name.includes("Direction of attack")
             // remove all markers
             && feature.geometry.type !== "Point"
     })
@@ -52,7 +53,7 @@ function formatGeoJson(geojson) {
     return json;
 }
 
-function loadGeoJson(date) {
+function loadGeoJson(date: string) {
     const dateUnix = formatDateToUnix(date);
 
     fetch(`${API_GEO_JSON}${dateUnix}/geojson`)
@@ -64,11 +65,13 @@ function loadGeoJson(date) {
 }
 
 function update() {
-    emit('update', formatGeoJson(geojson.value));
+    emit('update', formatGeoJson(geojson.value as FeatureCollection));
 }
 
 watch(selectedDate, (newVal) => {
-    loadGeoJson(newVal);
+    if (newVal) {
+        loadGeoJson(newVal);
+    }
 })
 
 onMounted(() => {
