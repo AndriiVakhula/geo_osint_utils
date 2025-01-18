@@ -1,33 +1,49 @@
 <template>
     <div class="container relative pt-5">
-        <DeepStateMap @update="geojson = $event" />
+        <DeepStateMap class="mb-5" @update="mergeGeoJson" />
+
+        <Wikimapia class="mb-5" :left-lat="positions.leftLat" :top-lon="positions.topLon"
+            :right-lat="positions.rightLat" :bottom-lon="positions.bottomLon" @update="mergeGeoJson" />
+
+        <Map @update-position="updatePosition" :geo-json="geojson" />
 
         <div class="flex justify-end">
-            <Button class="mt-5" @click="download">Download</Button>
+            <DownloadKmlButton class="mt-5" :geo-json="geojson" file-name="map" />
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import convertGeoJSONToKML from './geoJsonToKml';
 import DeepStateMap from './integrations/DeepStateMap/Index.vue'
-import { Button } from '@/components/ui/button';
-import type { FeatureCollection, Feature } from 'geojson';
+import Wikimapia from './integrations/Wikimapia/Index.vue';
+import Map from './integrations/Map.vue';
+import DownloadKmlButton from './components/DownloadKmlButton.vue';
+import type { FeatureCollection } from 'geojson';
 
-const geojson = ref<FeatureCollection | Feature | null>(null);
+const geojson = ref<FeatureCollection>({
+    type: 'FeatureCollection',
+    features: []
+});
 
-function download() {
+const positions = ref({
+    leftLat: 0,
+    rightLat: 0,
+    topLon: 0,
+    bottomLon: 0
+});
+
+function updatePosition(data: { leftLat: number; rightLat: number; topLon: number; bottomLon: number }) {
+    positions.value = data;
+}
+
+function mergeGeoJson(geojsonVal: FeatureCollection) {
     if (geojson.value) {
-        const kml = convertGeoJSONToKML(geojson.value);
-        const blob = new Blob([kml], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'map.kml';
-        link.click();
+        if (geojson.value.type === 'FeatureCollection' && geojsonVal.type === 'FeatureCollection') {
+            geojson.value.features = geojson.value.features.concat(geojsonVal.features);
+        }
     } else {
-        console.error('No GeoJSON data available to download.');
+        geojson.value = geojsonVal;
     }
 }
 </script>
