@@ -51,9 +51,7 @@ function polygonAndLineStyle(feature?: Feature<Geometry, GeoJsonProperties>): Pa
 
 
 watch(() => props.geoJson, (newVal) => {
-    if (!map && !props.geoJson) return;
-
-    if (!map) return;
+    if (!map || !props.geoJson) return;
 
     if (geoJsonLayer) {
         map.removeLayer(geoJsonLayer);
