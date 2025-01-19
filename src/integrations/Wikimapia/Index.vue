@@ -17,7 +17,7 @@ interface WikiMapiaPlace {
     name: string;
 }
 
-const API_URL = 'http://api.wikimapia.org/';
+const API_URL = 'https://api.wikimapia.org/';
 
 const emit = defineEmits(['update']);
 const props = defineProps<{
