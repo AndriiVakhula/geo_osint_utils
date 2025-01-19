@@ -3,6 +3,8 @@ import { onMounted, ref, defineEmits, defineProps, watch } from 'vue';
 import L, { type PathOptions } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { FeatureCollection, Feature, GeoJsonProperties, Geometry } from 'geojson';
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+
 
 const emit = defineEmits(['updatePosition']);
 const props = defineProps<{ geoJson: FeatureCollection }>();
@@ -16,6 +18,10 @@ let geoJsonLayer: L.GeoJSON | null = null;
 
 
 const initializeMap = () => {
+    L.Marker.prototype.setIcon(L.icon({
+        iconUrl: markerIcon
+    }))
+
     map = L.map('map').setView([48.3794, 31.1656], 6);
 
     const OpenStreetMap_HOT = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
