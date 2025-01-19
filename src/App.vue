@@ -1,5 +1,6 @@
 <template>
     <div class="container relative pt-5">
+        <Analytics />
         <DeepStateMap class="mb-5" @update="mergeGeoJson" />
 
         <Wikimapia class="mb-5" :left-lat="positions.leftLat" :top-lon="positions.topLon"
@@ -15,6 +16,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { Analytics } from '@vercel/analytics/vue';
 import DeepStateMap from './integrations/DeepStateMap/Index.vue'
 import Wikimapia from './integrations/Wikimapia/Index.vue';
 import Map from './integrations/Map.vue';
