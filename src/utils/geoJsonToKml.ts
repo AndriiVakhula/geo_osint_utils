@@ -5,19 +5,20 @@ function convertGeoJSONToKML(geojson: FeatureCollection | Feature): string {
 
   let kml = `<?xml version="1.0" encoding="UTF-8"?>
   <kml xmlns="http://www.opengis.net/kml/2.2">
-    <Document>
-      <Style id="polygonStyle">
-        <PolyStyle>
-          <color>0</color>
-          
-        </PolyStyle>
+    <Document>`
 
-        <LineStyle>
-          <color>ff0000ff</color>
-          <width>2</width>
-        </LineStyle>
-      </Style>
-  `
+  function style(feature: any): string {
+    return `    <Style id="polygonStyle">
+      <PolyStyle>
+        <color>0</color>
+      </PolyStyle>
+      <LineStyle>
+        <color>${feature.property?.stroke ?? 'ff0000ff'}</color>
+        <width>${feature.property?.['stroke-width'] ?? 1}</width>
+      </LineStyle>
+    </Style>
+    `
+  }
 
   // Iterate through each feature
   for (const feature of features) {
@@ -25,6 +26,8 @@ function convertGeoJSONToKML(geojson: FeatureCollection | Feature): string {
       // Skip features without geometry
       continue
     }
+
+    kml += style(feature)
 
     const geometry: Geometry = feature.geometry
     const properties: GeoJsonProperties = feature.properties || {}

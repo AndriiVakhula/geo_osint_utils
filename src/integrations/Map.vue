@@ -1,0 +1,109 @@
+<script lang="ts" setup name="MapComponent">
+import { onMounted, ref, defineEmits, defineProps, watch } from 'vue';
+import L, { type PathOptions } from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import type { FeatureCollection, Feature, GeoJsonProperties, Geometry } from 'geojson';
+
+const emit = defineEmits(['updatePosition']);
+const props = defineProps<{ geoJson: FeatureCollection }>();
+
+let map: L.Map | null = null;
+const leftLat = ref(0);
+const rightLat = ref(0);
+const topLon = ref(0);
+const bottomLon = ref(0);
+let geoJsonLayer: L.GeoJSON | null = null;
+
+
+const initializeMap = () => {
+    map = L.map('map').setView([48.3794, 31.1656], 6);
+
+    const OpenStreetMap_HOT = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, Tiles courtesy of <a href="http://hot.openstreetmap.org/" target="_blank">Humanitarian OpenStreetMap Team</a>'
+    }).addTo(map);
+
+    const Esri_WorldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri'
+    });
+
+    const baseMaps = {
+        "OSM HOT": OpenStreetMap_HOT,
+        "Esri World Imagery": Esri_WorldImagery
+    };
+
+    L.control.layers(baseMaps).addTo(map);
+
+    map.on('move', updateMapBounds);
+};
+
+function polygonAndLineStyle(feature?: Feature<Geometry, GeoJsonProperties>): PathOptions {
+    if (!feature || !feature.properties) return {};
+
+    return {
+        color: '#' + feature.properties.stroke || '#3388ff',
+        weight: feature.properties['stroke-width'] || 3,
+        opacity: feature.properties['stroke-opacity'] || 1,
+        fillColor: feature.properties.fill || '#3388ff',
+        fillOpacity: feature.properties['fill-opacity'] || 0.2
+    };
+}
+
+
+watch(() => props.geoJson, (newVal) => {
+    if (!map || !props.geoJson) return;
+
+    if (geoJsonLayer) {
+        map.removeLayer(geoJsonLayer);
+    }
+
+    geoJsonLayer = L.geoJSON(
+        newVal,
+        {
+            style: polygonAndLineStyle,
+            onEachFeature(feature, layer) {
+                if (feature.properties && feature.properties.name) {
+                    layer.bindPopup(`<h4>${feature.properties.name}</h4>`);
+                }
+            }
+        }).addTo(map);
+}, { deep: true });
+
+
+const updateMapBounds = () => {
+    if (!map) return;
+    const mapbounds = map.getBounds();
+    topLon.value = mapbounds.getNorthEast().lat;
+    rightLat.value = mapbounds.getNorthEast().lng;
+    bottomLon.value = mapbounds.getSouthWest().lat;
+    leftLat.value = mapbounds.getSouthWest().lng;
+
+    emit('updatePosition', {
+        leftLat: leftLat.value,
+        rightLat: rightLat.value,
+        topLon: topLon.value,
+        bottomLon: bottomLon.value
+    });
+
+};
+
+
+onMounted(initializeMap);
+</script>
+
+<template>
+    <div class="relative">
+        <div id="map" style="height: 600px;">
+            <div id="shadow"></div>
+            <div id="spin_div"></div>
+        </div>
+    </div>
+</template>
+
+<style>
+#map {
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+}
+</style>
