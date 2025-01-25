@@ -15,6 +15,11 @@ const leftLat = ref(0);
 const rightLat = ref(0);
 const topLon = ref(0);
 const bottomLon = ref(0);
+
+const isContextMenuVisible = ref(false);
+const contextMenuPos = ref({ x: 0, y: 0 });
+const clickCoords = ref<{ lat: number; lng: number } | null>(null);
+
 let geoJsonLayer: L.GeoJSON | null = null;
 
 const initializeMap = () => {
@@ -41,6 +46,26 @@ const initializeMap = () => {
     L.control.layers(baseMaps).addTo(map);
 
     map.on('move', updateMapBounds);
+
+    map.on('contextmenu', (e: L.LeafletMouseEvent) => {
+        e.originalEvent.preventDefault();
+
+        clickCoords.value = {
+            lat: Number(e.latlng.lat.toFixed(6)),
+            lng: Number(e.latlng.lng.toFixed(6)),
+        };
+
+        contextMenuPos.value = {
+            x: e.containerPoint.x,
+            y: e.containerPoint.y,
+        };
+
+        isContextMenuVisible.value = true;
+    });
+
+    map.on('click', () => {
+        isContextMenuVisible.value = false;
+    });
 };
 
 function polygonAndLineStyle(feature?: Feature<Geometry, GeoJsonProperties>): PathOptions {
@@ -99,12 +124,23 @@ const updateMapBounds = () => {
     });
 };
 
+const copyCoordinates = () => {
+  if (!clickCoords.value) return;
+  const coordsString = `${clickCoords.value.lat}, ${clickCoords.value.lng}`;
+  navigator.clipboard.writeText(coordsString)
+    .then(() => {
+        isContextMenuVisible.value = false;
+    })
+    .catch((err) => {
+        console.error('Copy error', err);
+    });
+};
+
 onMounted(initializeMap);
 </script>
 
 <template>
     <div class="relative">
-
         <div class="absolute top-3 left-12 z-10 max-w-sm items-center bg-background w-80">
             <Input id="search" type="text" placeholder="Go to place" class="pl-10" @keypress.enter="setPosition" />
             <span class="absolute start-0 inset-y-0 flex items-center justify-center px-2">
@@ -115,6 +151,20 @@ onMounted(initializeMap);
         <div id="map" style="height: 100vh;">
             <div id="shadow"></div>
             <div id="spin_div"></div>
+            <div
+                v-if="isContextMenuVisible"
+                class="bg-background p-3 rounded-md shadow-sm"
+                :style="{
+                    position: 'absolute',
+                    top: contextMenuPos.y + 'px',
+                    left: contextMenuPos.x + 'px',
+                    zIndex: 9999
+                }"
+            >
+                <button variant="outline" size="sm" @click="copyCoordinates">
+                    <b>Copy:</b> {{ clickCoords?.lat }} {{clickCoords?.lng}}
+                </button>
+            </div>
         </div>
     </div>
 </template>
