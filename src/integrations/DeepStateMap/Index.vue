@@ -1,6 +1,7 @@
 <script setup lang="ts" name="DeepStateMapComponent">
 import { ref, onMounted, watch, defineEmits } from 'vue'
 import { formatDateToUnix } from '@/utils/date'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import Combobox from '@/components/Combobox.vue'
 import DownloadKmlButton from '../../components/DownloadKmlButton.vue'
 import type { FeatureCollection, Feature } from 'geojson'
@@ -82,14 +83,18 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="border rounded-xl p-3">
-        <img src="./logo.svg" alt="DeepState Map" class="w-20 h-20" />
+    <Accordion type="single" class="w-full" collapsible>
+        <AccordionItem value="depstate">
+            <AccordionTrigger>
+                <img src="./logo.svg" alt="DeepState Map" class="w-20 h-20" />
+            </AccordionTrigger>
 
-        <div class="mt-1">
-            <Combobox v-model="selectedDate" :options="dates" label="Select date" />
-        </div>
-        <div class="flex justify-end mt-2">
-            <DownloadKmlButton file-name="deepstate-front-line" :geo-json="geojson" />
-        </div>
-    </div>
+            <AccordionContent>
+                <Combobox v-model="selectedDate" :options="dates" label="Select date" class="w-full" />
+                <div class="flex justify-end mt-2">
+                    <DownloadKmlButton file-name="deepstate-front-line" :geo-json="geojson" />
+                </div>
+            </AccordionContent>
+        </AccordionItem>
+    </Accordion>
 </template>

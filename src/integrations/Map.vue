@@ -1,4 +1,4 @@
-<script lang="ts" setup name="MapComponent">
+<script lang="ts" setup>
 import { onMounted, ref, defineEmits, defineProps, watch } from 'vue';
 import L, { type PathOptions } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -93,13 +93,12 @@ const updateMapBounds = () => {
 
 };
 
-
 onMounted(initializeMap);
 </script>
 
 <template>
     <div class="relative">
-        <div id="map" style="height: 600px;">
+        <div id="map" style="height: 100vh;">
             <div id="shadow"></div>
             <div id="spin_div"></div>
         </div>
