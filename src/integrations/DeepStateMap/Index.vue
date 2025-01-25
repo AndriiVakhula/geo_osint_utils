@@ -6,6 +6,7 @@ import Combobox from '@/components/Combobox.vue'
 import DownloadKmlButton from '../../components/DownloadKmlButton.vue'
 import type { FeatureCollection, Feature } from 'geojson'
 
+const DEEP_STATE_MAP_KEY = 'DeepStateMap';
 const API_DATES = 'https://deepstatemap.live/api/history/public'
 const API_GEO_JSON = 'https://deepstatemap.live/api/history/'
 
@@ -66,7 +67,7 @@ function loadGeoJson(date: string) {
 
 function update() {
     geojson.value = formatGeoJson(geojson.value as FeatureCollection);
-    emit('update', formatGeoJson(geojson.value as FeatureCollection));
+    emit('update',DEEP_STATE_MAP_KEY, formatGeoJson(geojson.value as FeatureCollection));
 }
 
 watch(selectedDate, (newVal) => {
