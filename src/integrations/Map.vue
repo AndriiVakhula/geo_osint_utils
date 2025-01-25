@@ -1,10 +1,11 @@
 <script lang="ts" setup>
 import { onMounted, ref, defineEmits, defineProps, watch } from 'vue';
 import L, { type PathOptions } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import type { FeatureCollection, Feature, GeoJsonProperties, Geometry } from 'geojson';
 import markerIcon from "leaflet/dist/images/marker-icon.png";
-
+import 'leaflet/dist/leaflet.css';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-vue-next'
+import type { FeatureCollection, Feature, GeoJsonProperties, Geometry } from 'geojson';
 
 const emit = defineEmits(['updatePosition']);
 const props = defineProps<{ geoJson: FeatureCollection }>();
@@ -15,7 +16,6 @@ const rightLat = ref(0);
 const topLon = ref(0);
 const bottomLon = ref(0);
 let geoJsonLayer: L.GeoJSON | null = null;
-
 
 const initializeMap = () => {
     L.Marker.prototype.setIcon(L.icon({
@@ -55,6 +55,14 @@ function polygonAndLineStyle(feature?: Feature<Geometry, GeoJsonProperties>): Pa
     };
 }
 
+function setPosition(event: KeyboardEvent) {
+    if (!map) return;
+    const [lat, lon] = (event.target as HTMLInputElement)?.value.split(',').map(Number);
+
+    if (lat && lon) {
+        map.setView([lat, lon], 12);
+    }
+}
 
 watch(() => props.geoJson, (newVal) => {
     if (!map || !props.geoJson) return;
@@ -75,7 +83,6 @@ watch(() => props.geoJson, (newVal) => {
         }).addTo(map);
 }, { deep: true });
 
-
 const updateMapBounds = () => {
     if (!map) return;
     const mapbounds = map.getBounds();
@@ -90,7 +97,6 @@ const updateMapBounds = () => {
         topLon: topLon.value,
         bottomLon: bottomLon.value
     });
-
 };
 
 onMounted(initializeMap);
@@ -98,6 +104,14 @@ onMounted(initializeMap);
 
 <template>
     <div class="relative">
+
+        <div class="absolute top-3 left-12 z-10 max-w-sm items-center bg-background w-80">
+            <Input id="search" type="text" placeholder="Go to place" class="pl-10" @keypress.enter="setPosition" />
+            <span class="absolute start-0 inset-y-0 flex items-center justify-center px-2">
+                <Search class="size-5 text-muted-foreground" />
+            </span>
+        </div>
+
         <div id="map" style="height: 100vh;">
             <div id="shadow"></div>
             <div id="spin_div"></div>
