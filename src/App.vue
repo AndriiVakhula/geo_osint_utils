@@ -9,7 +9,7 @@
 
         <Sidebar>
             <DeepStateMap class="mb-5" @update="setData" />
-
+            <OverpassTurbo class="mb-5" @update="setData" />
             <Wikimapia
                 class="mb-5"
                 :left-lat="positions.leftLat"
@@ -18,6 +18,7 @@
                 :bottom-lon="positions.bottomLon"
                 @update="setData"
             />
+            <History @update="setData" />
 
             <template #footer>
                 <div class="flex justify-end">
@@ -34,6 +35,8 @@ import Sidebar from './components/Sidebar.vue'
 import { Analytics } from '@vercel/analytics/vue'
 import DeepStateMap from './integrations/DeepStateMap/Index.vue'
 import Wikimapia from './integrations/Wikimapia/Index.vue'
+import OverpassTurbo from './integrations/OverpassTurbo/Index.vue';
+import History from './integrations/History/Index.vue';
 import Map from './integrations/Map.vue'
 import DownloadKmlButton from './components/DownloadKmlButton.vue'
 import type { FeatureCollection } from 'geojson'

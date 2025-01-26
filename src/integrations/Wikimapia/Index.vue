@@ -11,7 +11,6 @@ import * as categoriesList from './categories.json';
 import DownloadKmlButton from '../../components/DownloadKmlButton.vue';
 import type { Feature } from 'geojson';
 
-
 interface WikiMapiaPlace {
     id: number;
     polygon: { x: number; y: number }[];
@@ -112,7 +111,6 @@ const loadPlaces = async () => {
 
         pointsData.value = points;
 
-        console.log(WIKIMAPIA_KEY, featureCollection(points));
         emit('update',WIKIMAPIA_KEY, featureCollection(points));
     } catch (error) {
         console.error('Error processing places:', error);
