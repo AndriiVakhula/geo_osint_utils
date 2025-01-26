@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { defineProps, defineEmits, ref, onMounted, watch } from 'vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { featureCollection } from '@turf/turf';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ interface WikiMapiaPlace {
     name: string;
 }
 
+const WIKIMAPIA_KEY = 'wikimapia';
 const API_URL = 'https://api.wikimapia.org/';
 
 const emit = defineEmits(['update']);
@@ -109,7 +111,7 @@ const loadPlaces = async () => {
 
         pointsData.value = points;
 
-        emit('update', featureCollection(points));
+        emit('update',WIKIMAPIA_KEY, featureCollection(points));
     } catch (error) {
         console.error('Error processing places:', error);
     }
@@ -121,33 +123,37 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="border rounded-xl p-3">
-        <img src="./logo.png" alt="wikimapia" class="mb-2" />
+    <Accordion type="single" class="w-full" collapsible>
+        <AccordionItem value="depstate">
+            <AccordionTrigger>
+                <img src="./logo.png" alt="wikimapia" />
+            </AccordionTrigger>
 
+            <AccordionContent>
+                <Alert class="mb-2" variant="destructive" v-if="isApiKeyInvalid">
+                    <AlertTitle>Error!</AlertTitle>
+                    <AlertDescription>
+                        You API key is invalid. Please provide a valid API key.
+                    </AlertDescription>
+                </Alert>
 
-        <Alert class="mb-2" variant="destructive" v-if="isApiKeyInvalid">
-            <AlertTitle>Error!</AlertTitle>
-            <AlertDescription>
-                You API key is invalid. Please provide a valid API key.
-            </AlertDescription>
-        </Alert>
+                <div class="flex mb-2">
+                    <Combobox class="mr-3" v-model="category" :options="categories" label="Select category" />
 
+                    <div class="w-full">
+                        <Label>API key</Label>
+                        <Input class="mt-1" placeholder="API key" v-model="apiKey" />
+                    </div>
+                </div>
 
-        <div class="flex mb-2">
-            <Combobox class="mr-3" v-model="category" :options="categories" label="Select category" />
+                <div class="flex justify-end">
+                    <Button class="mr-1" :disabled="!category" @click="loadPlaces">
+                        Load places
+                    </Button>
 
-            <div class="w-full">
-                <Label>API key</Label>
-                <Input class="mt-1" placeholder="API key" v-model="apiKey" />
-            </div>
-        </div>
-
-        <div class="flex justify-end">
-            <Button class="mr-1" :disabled="!category" @click="loadPlaces">
-                Load places
-            </Button>
-
-            <DownloadKmlButton file-name="wikimapia" :geoJson="featureCollection(pointsData ?? [])" />
-        </div>
-    </div>
+                    <DownloadKmlButton file-name="wikimapia" :geoJson="featureCollection(pointsData ?? [])" />
+                </div>
+            </AccordionContent>
+        </AccordionItem>
+    </Accordion>
 </template>

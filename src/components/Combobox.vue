@@ -50,7 +50,7 @@ const filteredOptions = computed(() => {
         <div class="mt-1">
             <Popover v-model:open="open">
                 <PopoverTrigger as-child>
-                    <Button variant="outline" role="combobox" :aria-expanded="open" class="w-96 justify-between">
+                    <Button variant="outline" role="combobox" :aria-expanded="open" class="w-full justify-between">
                         {{
                             model
                                 ? options?.find((option) => option.value.toString() === model)?.label
