@@ -2,12 +2,14 @@
 import { ref, watch, defineEmits } from 'vue'
 import { featureCollection } from '@turf/turf'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input';
 import type { Feature } from 'geojson'
 import { useDebounce } from '@/utils/useDebounce';
+import { parseCoordinates } from '@/utils/parseCoordinates';
 
 const HISTORY_KEY = "history";
-const SHEET_TSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRZpNiKE8fcAve5vmmyiuvFgUVvAm-sn_QfsV2JXGH1UYUKVM0vEtyZA2iE3lKGuKrw4Poeo-aTXl4L/pub?output=tsv";
+const SHEET_TSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTeKw2iYbEK_NihjyA78sJMXOVpoRGETxE00GVLBFHL8wz8aTGrA8-k-ojt8nI3NrhErogk-gAMwP26/pub?gid=1893012681&single=true&output=tsv";
 
 interface Record {
     [key: string]: string;
@@ -16,6 +18,7 @@ interface Record {
 let records: Record[] = []
 const search = ref('')
 const emit = defineEmits(['update'])
+const showFullHistory = ref(false);
 
 fetch(SHEET_TSV_URL)
     .then((response) => response.text())
@@ -39,28 +42,59 @@ fetch(SHEET_TSV_URL)
         records = data
     })
 
-const debouncedSearch = useDebounce(search, 300)
+const parseItemsToPoints = (records: any) => {
+    const points: Feature[] = [];
 
-watch(debouncedSearch, (value) => {
-    const filteredData = records.filter((item) => {
-        return item['підрозділ'].includes(value)
-    })
+    records.forEach((item: any) => {
+        const coordinatesData = item['Координати'];
 
-    const points: Feature[] = filteredData.map((item) => {
-        const coordinates = item['Координати'].split(', ').map(Number).reverse();
-        return {
+        if (!coordinatesData.length) {
+            return null;
+        }
+
+        const coordinates = parseCoordinates(coordinatesData);
+        console.log(item)
+        const point = {
             type: 'Feature',
             geometry: {
                 type: 'Point',
                 coordinates: [...coordinates, 0],
             },
             properties: {
-                name: item['підрозділ'],
+                name: `
+                    Підрозділ: ${item['підрозділ']} <br>
+                    Таймкод: ${item['таймкод']}<br>
+                    Лінк на відео: <a href="${item['Лінк відео']}">${item['Лінк відео']}</a><br>
+                `,
             },
         }
+
+        points.push(point as Feature)
     })
 
-    emit('update', HISTORY_KEY, featureCollection(points))
+    return points;
+}
+
+const debouncedSearch = useDebounce(search, 600)
+watch(debouncedSearch, (value) => {
+    if (!showFullHistory.value && !value.length) {
+        emit('update', HISTORY_KEY, featureCollection([]))
+        return;
+    }
+
+    const filteredData = records.filter((item) => {
+        return item['підрозділ'].includes(value)
+    })
+
+    emit('update', HISTORY_KEY, featureCollection(parseItemsToPoints(filteredData)))
+});
+
+watch(showFullHistory, (value) => {
+    if (value && !debouncedSearch.value.length) {
+        emit('update', HISTORY_KEY, featureCollection(parseItemsToPoints(records)))
+    } else {
+        emit('update', HISTORY_KEY, featureCollection([]))
+    }
 })
 </script>
 
@@ -72,8 +106,18 @@ watch(debouncedSearch, (value) => {
             </AccordionTrigger>
 
             <AccordionContent>
+                <div class="mb-2">
+                    <Checkbox @update:checked="(val) => showFullHistory = val" id="fullHistory" label="Show all unit history" />
+                    <label
+                         for="fullHistory"
+                        class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                       >
+                        Show all unit history
+                    </label>
+                </div>
+
                 <div>
-                    <Input v-model="search" />
+                    <Input v-model="search" placeholder="Unit name" />
                 </div>
             </AccordionContent>
         </AccordionItem>
