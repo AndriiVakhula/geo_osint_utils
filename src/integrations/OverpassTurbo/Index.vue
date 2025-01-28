@@ -41,7 +41,7 @@ async function getPowerLines(areaName: string, voltage: string) {
             ["admin_level"="4"]
             ["name:uk"="${areaName}"]->.searchArea;
         (
-            way["power"="line"]["voltage"="${voltage}"](area.searchArea);
+            way["power"="line"]${voltage ? `["voltage"="${voltage}"]` : ""}(area.searchArea);
         );
         out geom;
     >;
@@ -93,7 +93,7 @@ async function getPowerLines(areaName: string, voltage: string) {
                 <Combobox class="mr-3" v-model="voltage" :options="voltageOptions" label="Select Voltage" />
 
                 <div class="flex justify-end mt-2">
-                    <Button @click="getPowerLines(searchArea, voltage)":disabled="!searchArea.length || !voltage.length" class="mr-1">Get Power Lines</Button>
+                    <Button @click="getPowerLines(searchArea, voltage)" :disabled="!searchArea.length" class="mr-1">Get Power Lines</Button>
 
                     <DownloadKmlButton file-name="overpassturbo" :geoJson="featureCollection(powerLinesData ?? [])" />
                 </div>
