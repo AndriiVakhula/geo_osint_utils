@@ -30,7 +30,6 @@ const initializeMap = () => {
     map = L.map('map').setView([48.3794, 31.1656], 6);
 
     const OpenStreetMap_HOT = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-        maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, Tiles courtesy of <a href="http://hot.openstreetmap.org/" target="_blank">Humanitarian OpenStreetMap Team</a>'
     }).addTo(map);
 
@@ -85,7 +84,7 @@ function setPosition(event: KeyboardEvent) {
     const [lat, lon] = (event.target as HTMLInputElement)?.value.split(',').map(Number);
 
     if (lat && lon) {
-        map.setView([lat, lon], 12);
+        map.setView([lat, lon], 19);
     }
 }
 
