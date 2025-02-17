@@ -53,7 +53,6 @@ const parseItemsToPoints = (records: any) => {
         }
 
         const coordinates = parseCoordinates(coordinatesData);
-        console.log(item)
         const point = {
             type: 'Feature',
             geometry: {
@@ -65,6 +64,7 @@ const parseItemsToPoints = (records: any) => {
                     Підрозділ: ${item['підрозділ']} <br>
                     Таймкод: ${item['таймкод']}<br>
                     Лінк на відео: <a href="${item['Лінк відео']}">${item['Лінк відео']}</a><br>
+                    Дата: ${item['ЗАПОВНЮЄТЬСЯ ЗВІТУЮЧИМ!\r']}
                 `,
             },
         }
