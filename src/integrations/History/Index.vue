@@ -1,10 +1,20 @@
 <script lang="ts" setup>
-import { ref, watch, defineEmits } from 'vue'
+import { type Ref,ref, watch, defineEmits, watchEffect } from 'vue';
+import type { DateRange } from 'reka-ui'
 import { featureCollection } from '@turf/turf'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input';
+import { CalendarIcon } from 'lucide-vue-next'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import type { Feature } from 'geojson'
+import { RangeCalendar } from '@/components/ui/range-calendar'
+import { CalendarDate } from '@internationalized/date'
 import { useDebounce } from '@/utils/useDebounce';
 import { parseCoordinates } from '@/utils/parseCoordinates';
 
@@ -16,7 +26,13 @@ interface Record {
 }
 
 let records: Record[] = []
-const search = ref('')
+const search = ref('');
+
+const date = ref({
+  start: undefined,
+  end: undefined,
+}) as Ref<DateRange>
+
 const emit = defineEmits(['update'])
 const showFullHistory = ref(false);
 
@@ -76,26 +92,67 @@ const parseItemsToPoints = (records: any) => {
 }
 
 const debouncedSearch = useDebounce(search, 600)
-watch(debouncedSearch, (value) => {
-    if (!showFullHistory.value && !value.length) {
+watchEffect(() => {
+    if (shouldReturnEmptyCollection()) {
         emit('update', HISTORY_KEY, featureCollection([]))
         return;
     }
 
-    const filteredData = records.filter((item) => {
-        return item['підрозділ'].includes(value)
-    })
-
+    const filteredData = filterRecords();
     emit('update', HISTORY_KEY, featureCollection(parseItemsToPoints(filteredData)))
 });
 
-watch(showFullHistory, (value) => {
-    if (value && !debouncedSearch.value.length) {
-        emit('update', HISTORY_KEY, featureCollection(parseItemsToPoints(records)))
-    } else {
-        emit('update', HISTORY_KEY, featureCollection([]))
+function shouldReturnEmptyCollection(): boolean {
+    return !showFullHistory.value && !debouncedSearch.value.length;
+}
+
+function filterRecords(): Record[] {
+    if (showFullHistory.value && (!date.value.start && !date.value.end)) {
+        return records;
     }
-})
+
+    return records.filter((item) => {
+        const isSearchMatch = item['підрозділ'].includes(debouncedSearch.value);
+
+        if (date.value.start && date.value.end) {
+            const pointDate = getDateFromRecord(item);
+            const dateRange = getDateRange();
+
+            if (showFullHistory.value) {
+                return isWithinDateRange(pointDate, dateRange);
+            }
+
+            return isWithinDateRange(pointDate, dateRange) && isSearchMatch;
+        }
+
+        return isSearchMatch;
+    });
+}
+
+function getDateFromRecord(item: Record): CalendarDate {
+    const [year, month, day] = item['ЗАПОВНЮЄТЬСЯ ЗВІТУЮЧИМ!\r']?.trim().split('.').reverse();
+    return new CalendarDate(+year, +month, +day);
+}
+
+function getDateRange() {
+    const startDate = new CalendarDate(
+        date.value.start?.year ?? 0,
+        (date.value.start?.month ?? 0) - 1,
+        date.value.start?.day ?? 0
+    );
+
+    const endDate = new CalendarDate(
+        date.value.end?.year ?? 0,
+        (date.value.end?.month ?? 0) - 1,
+        date.value.end?.day ?? 0
+    );
+
+    return { startDate, endDate };
+}
+
+function isWithinDateRange(pointDate: CalendarDate, dateRange: { startDate: CalendarDate, endDate: CalendarDate }): boolean {
+    return pointDate >= dateRange.startDate && pointDate <= dateRange.endDate;
+}
 </script>
 
 <template>
@@ -107,17 +164,44 @@ watch(showFullHistory, (value) => {
 
             <AccordionContent>
                 <div class="mb-2">
-                    <Checkbox @update:checked="(val) => showFullHistory = val" id="fullHistory" label="Show all unit history" />
+                    <Checkbox
+                        :disabled="Boolean(search.length)"
+                        id="fullHistory"
+                        label="Show all unit history"
+                        @update:checked="showFullHistory = $event"
+                    />
+
                     <label
-                         for="fullHistory"
+                        for="fullHistory"
                         class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                        >
                         Show all unit history
                     </label>
                 </div>
 
-                <div>
-                    <Input v-model="search" placeholder="Unit name" />
+                <Popover>
+                    <PopoverTrigger class="w-full">
+                        <Button variant="outline" size="sm" class="w-full">
+
+                        <template v-if="date?.start && date.end">
+                            {{ date.start.toString() }} - {{ date.end?.toString() }}
+
+                            <CalendarIcon class="mr-2 h-4 w-4" />
+                        </template>
+
+                        <template v-else>
+                            Select date range
+                            <CalendarIcon class="mr-2 h-4 w-4" />
+                        </template>
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent>
+                        <RangeCalendar v-model="date" />
+                    </PopoverContent>
+                </Popover>
+
+                <div class="mt-2">
+                    <Input v-model="search" :disabled="showFullHistory" placeholder="Unit name" />
                 </div>
             </AccordionContent>
         </AccordionItem>
